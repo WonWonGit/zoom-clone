@@ -1,38 +1,37 @@
-const messageList = document.querySelector("ul");
-const messageFrom = document.querySelector("#msg");
-const nicknameFrom = document.querySelector("#nickname");
-const aSocket = new WebSocket(`ws://${window.location.host}`);
+const socket = io();
 
-function makeMessage(type, payload){
-    const msg = {type, payload}
-    return JSON.stringify(msg)
+const welcome= document.getElementById("welcome");
+const form = welcome.querySelector("form");
+const room = document.getElementById("room");
+room.hidden = true;
+
+let roomName;
+
+function showRoom(){
+    welcome.hidden = true;
+    room.hidden = false;
+    const h3 = room.querySelector("h3");
+    h3.innerText=`RoomName ${roomName}`;
 }
 
-aSocket.addEventListener("open",()=>{
-    console.log("Connected to Server:D");
-})
-
-aSocket.addEventListener("message",(message)=>{
-    console.log("New message : ",message.data);
-    const li = document.createElement("li");
-    li.innerText = message.data;
-    messageList.append(li);
-})
-
-aSocket.addEventListener("close",()=>{
-    console.log("Disconnected to Server :(")
-})
-
-messageFrom.addEventListener("submit", (event)=>{
+function handleRoomSubmit(event){
     event.preventDefault();
-    const input = messageFrom.querySelector("input");
-    aSocket.send(makeMessage("new_message",input.value));
-    console.log(makeMessage("new_message",input.value))
+    const input = form.querySelector("input");
+    //socket.send(String) 대신 아무 event를 만들어서 object를 전달
+    socket.emit("enter_room",input.value,showRoom);
+    roomName = input.value;
     input.value="";
-})
+}
 
-nicknameFrom.addEventListener("submit", (event)=>{
-    event.preventDefault();
-    const input = nicknameFrom.querySelector("input");
-    aSocket.send(makeMessage("nickname",input.value));
+form.addEventListener("submit",handleRoomSubmit);
+
+function addMessage(msg) {
+    const ul = room.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = msg;
+    ul.appendChild(li);
+}
+
+socket.on("welcome",()=>{
+    addMessage("someone Join!");
 })
